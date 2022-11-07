@@ -17,6 +17,10 @@ install-hooks:
 lint:  # Use all linters on all files (not just staged for commit)
 	pre-commit run --all --all-files
 
+.PHONY: run
+run:
+	sh -c "DISCORD_API_TOKEN=$(shell pass zeusops/attendance_bot_token) poetry run zeusops-attendance-bot"
+
 .PHONY: test
 test:
 	poetry run pytest

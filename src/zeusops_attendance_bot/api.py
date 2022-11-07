@@ -1,33 +1,67 @@
 """Client bindings to a REST API"""
 
+from discord import Client, Guild, Intents, TextChannel
 
-import httpx
-
-ApiHeaders = dict[str, str]
 Secret = str
 
 
-API_BASEURL = "http://example.com/api/v1"
+class AttendanceClient(Client):
+    """A discord Client for recording attendance"""
+
+    zeusops_guild: Guild
+    attendance_channel: TextChannel
+
+    async def on_ready(self):
+        """Entrypoint on app connected to discord"""
+        print(f"We have logged in as {self.user}")
+        # For debug purposes:
+        # await self.print_memberships()
+        self.zeusops_guild = get_zeusops_server(self)
+        self.attendance_channel = get_attendance_channel(self.zeusops_guild)
+        print(
+            f"Found attendance channel with {len(self.attendance_channel.members)} members"
+        )
+        await print_history(self.attendance_channel)
+
+    async def print_memberships(self):
+        """Print guilds/channels we're member of"""
+        for guild in self.guilds:
+            print(f"Member of guild: {guild.name}, ID={guild.id}")
+            for channel in guild.channels:
+                print(f"Member of channel: {channel.name}, ID={channel.id}")
 
 
-def api_get(headers: ApiHeaders):
-    """HTTP Get the /status endpoint, validating credentials"""
-    url = f"{API_BASEURL}/status"
-    response = httpx.get(url, headers=headers)
-    response.raise_for_status()  # Raise exception on non-OK HTTP status code
-    return response.json()
+def get_client() -> Client:
+    """Get a Discord client with necessary intents"""
+    intents = Intents.default()
+    intents.message_content = True
+    client = AttendanceClient(intents=intents)
+    return client
 
 
-def prep_headers(token: Secret) -> ApiHeaders:
-    """Prepare the required API Headers"""
-    return {
-        "Authorization": f"Bearer {token}",
-        # "User-Agent": "cool user agent",
-    }
+def run(client: Client, token: Secret):
+    """Run a client's main event loop"""
+    client.run(token)
 
 
-def get_from_api(token: Secret) -> dict:
-    """Get the info from API"""
-    headers = prep_headers(token)
-    api_response = api_get(headers)
-    return api_response
+def get_zeusops_server(client: Client) -> Guild:
+    """Grab the Zeusops server by ID"""
+    ZEUSOPS_GUILD_ID = 219564389462704130
+    return client.get_guild(ZEUSOPS_GUILD_ID)
+
+
+def get_attendance_channel(zeusops_guild: Guild) -> TextChannel:
+    """Grab the Zeusops attendance channel by ID"""
+    ZEUSOPS_ATTENDANCE_CHANNEL_ID = 817815909565202493
+    return zeusops_guild.get_channel(ZEUSOPS_ATTENDANCE_CHANNEL_ID)
+
+
+async def print_history(channel: TextChannel):
+    """Iterate over the message history of the given channel"""
+    messages = [
+        message async for message in channel.history(limit=20, oldest_first=True)
+    ]
+    for message in messages:
+        print(
+            f"Message! From {message.author.display_name}, content: {message.content}"
+        )
