@@ -12,7 +12,7 @@ def parse_arguments(arguments: list[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         "zeusops-attendance-bot",
         description="Parse Zeusops #attendance channel in Discord",
-        epilog="API token requires either --token-file flag or envvar API_TOKEN",
+        epilog="API token requires either --token-file flag or envvar DISCORD_API_TOKEN",
     )
     parser.add_argument(
         "--token-file", help="File containing API Token", type=argparse.FileType("r")
@@ -28,10 +28,11 @@ def cli(arguments: Optional[list[str]] = None):
     if args.token_file:
         token = args.token_file.read().strip()
     else:
-        token = os.getenv("API_TOKEN")
+        token = os.getenv("DISCORD_API_TOKEN")
     if token is None:
         print(
-            "Missing API token: --token-file or set API_TOKEN envvar", file=sys.stderr
+            "Missing API token: --token-file or set DISCORD_API_TOKEN envvar",
+            file=sys.stderr,
         )
         exit(2)  # Simulate the argparse behaviour of exiting on bad args
     main(token)

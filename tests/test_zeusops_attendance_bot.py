@@ -13,8 +13,8 @@ def test_cli_set_token_envvar(mocker, capsys):
     mocked_api_call = mocker.patch(
         "zeusops_attendance_bot.cli.get_from_api", return_value=MOCKED_API_RESPONSE
     )
-    # And a API_TOKEN envvar
-    mocker.patch.dict(os.environ, {"API_TOKEN": API_AUTH_TOK})
+    # And a DISCORD_API_TOKEN envvar
+    mocker.patch.dict(os.environ, {"DISCORD_API_TOKEN": API_AUTH_TOK})
     # When I call the API-fetching CLI
     cli([])
     # Then the mock API was hit
@@ -32,7 +32,7 @@ def test_cli_set_token_file(mocker, capsys, tmp_path):
     mocked_api_call = mocker.patch(
         "zeusops_attendance_bot.cli.get_from_api", return_value=MOCKED_API_RESPONSE
     )
-    # And a API_TOKEN as file
+    # And a DISCORD_API_TOKEN as file
     auth_tok_filepath = tmp_path / ".auth"
     with open(auth_tok_filepath, "w") as token_fd:
         token_fd.write(API_AUTH_TOK)
