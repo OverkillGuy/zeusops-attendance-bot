@@ -10,8 +10,8 @@ zeusops-attendance-bot = "zeusops_attendance_bot.cli:cli"
 
 [tool.poetry.dependencies]
 python = "^3.10"
-httpx = "*"
-
+# Parsing #attendance channel in discord
+"discord.py" = "^2.0.1"
 
 # Note: Linters not defined in this file but .pre-commit-config.yaml, which
 # installs/manages each tool in its own isolated virtualenv
@@ -24,8 +24,6 @@ pytest-cov = "3.*"
 pytest-clarity = "1.*"
 # Expose unittest.Mocker in pytest
 pytest-mock = "*"
-# httpx Mocker, enabling API mocks during testing
-respx = "*"
 
 [tool.poetry.group.docs.dependencies]
 # Main documentation-as-code (HTML/PDF generator)
