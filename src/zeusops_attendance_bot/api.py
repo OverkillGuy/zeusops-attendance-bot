@@ -1,5 +1,7 @@
 """Client bindings to a REST API"""
 
+import json
+
 from discord import Client, Guild, Intents, TextChannel
 
 Secret = str
@@ -21,7 +23,7 @@ class AttendanceClient(Client):
         print(
             f"Found attendance channel with {len(self.attendance_channel.members)} members"
         )
-        await print_history(self.attendance_channel)
+        await save_history(self.attendance_channel)
 
     async def print_memberships(self):
         """Print guilds/channels we're member of"""
@@ -56,12 +58,18 @@ def get_attendance_channel(zeusops_guild: Guild) -> TextChannel:
     return zeusops_guild.get_channel(ZEUSOPS_ATTENDANCE_CHANNEL_ID)
 
 
-async def print_history(channel: TextChannel):
-    """Iterate over the message history of the given channel"""
-    messages = [
-        message async for message in channel.history(limit=20, oldest_first=True)
-    ]
-    for message in messages:
-        print(
-            f"Message! From {message.author.display_name}, content: {message.content}"
-        )
+async def save_history(channel: TextChannel):
+    """Save the entire message history of the given channel to ndJson file"""
+    with open("attendance.json", "w") as json_fd:
+        msg_idx = 0
+        async for message in channel.history(limit=None, oldest_first=True):
+            print(f"{msg_idx=}")
+            entry = {
+                "t": message.created_at.isoformat(),
+                "m": message.content,
+                "a": message.author.display_name,
+            }
+            json.dump(entry, json_fd)
+            json_fd.write("\n")
+            msg_idx += 1
+        print("Completed")
