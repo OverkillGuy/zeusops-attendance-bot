@@ -9,7 +9,7 @@ REGEX_OP_SEPARATOR = re.compile(r"""(---+|===+)""")
 REGEX_SQUAD = re.compile(
     r"""
    ([A-Za-z0-9]+)         # A squad name (TODO check for SPACES?)
-   \s*[:-;]\s*         # Separator between squad: team
+   \s*[:\-;]\s*         # Separator between squad: team
    ([a-zA-Z0-9\(\),;\. ]+)  # Attendance for squad, unparsed
 """,
     re.VERBOSE,
