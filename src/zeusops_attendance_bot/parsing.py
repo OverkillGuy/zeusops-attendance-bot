@@ -3,8 +3,8 @@
 import re
 from pathlib import Path
 
-REGEX_OP_SEPARATOR = re.compile(r"""(---+|===+|\+\+\++|\.\.\.+|:::+)""")
-"""Match an operation's separator"""
+REGEX_OP_SEPARATOR = re.compile(r"""([-=:\.\+])\1\1+""")
+"""Match an operation's separator: same character 3 or more times"""
 
 REGEX_SQUAD = re.compile(
     r"""
