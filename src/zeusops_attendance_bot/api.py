@@ -24,6 +24,7 @@ class AttendanceClient(Client):
             f"Found attendance channel with {len(self.attendance_channel.members)} members"
         )
         await save_history(self.attendance_channel)
+        await self.close()
 
     async def print_memberships(self):
         """Print guilds/channels we're member of"""
