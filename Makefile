@@ -21,12 +21,12 @@ attendance.json:
 	sh -c "DISCORD_API_TOKEN=$(shell pass zeusops/attendance_bot_token) poetry run zeusops-attendance-bot"
 
 # Not phony because real file
-# Clean up the raw discord messages into proper attendance text file
-attendance.txt: attendance.json
+# Clean up the raw discord messages into ready to parse attendance file
+processed_attendance.json: attendance.json
 	poetry run python -c 'from zeusops_attendance_bot.attendance import main; main()'
 
 .PHONY: parse
-parse: attendance.txt
+parse: processed_attendance.json
 	poetry run python -c 'from zeusops_attendance_bot.parsing import main; main()'
 
 .PHONY: test

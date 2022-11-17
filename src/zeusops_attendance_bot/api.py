@@ -66,7 +66,9 @@ async def save_history(channel: TextChannel):
             {
                 "timestamp": message.created_at.isoformat(),
                 "message": message.content,
-                "author": message.author.display_name,
+                "author_display": message.author.display_name,
+                "author_id": message.author.id,
+                "id": message.id,
             }
             async for message in channel.history(limit=None, oldest_first=True)
         ]
