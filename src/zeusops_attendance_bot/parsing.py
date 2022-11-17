@@ -34,11 +34,16 @@ def main():
         )
     ]
     for start, end in in_between_locations:
-        print("---")
+        # print("---")
         start_offset, end_offset = start + 1, end - 1
         op_attendance_text = attendance_txt[start_offset:end_offset]  # FIXME: Offset \n
         # print(f"Attendance for op is:\n{op_attendance_text}")
-        squad_matches = re.findall(REGEX_SQUAD, op_attendance_text)
-        for squad, attendance_of_squad in squad_matches:
-            print(f"For {squad=}, attendance: '{attendance_of_squad}'")
+        for op_attendance_line in op_attendance_text.splitlines():
+            squad_match = re.fullmatch(REGEX_SQUAD, op_attendance_line)
+            # print(squad_match)
+            if squad_match is None:
+                print(f"Bad match: {op_attendance_line}")
+                continue
+            # squad, attendance_of_squad = squad_match.groups()
+            # print(f"For {squad=}, attendance: '{attendance_of_squad}'")
             # TODO: Process the squad's attendance as regex
