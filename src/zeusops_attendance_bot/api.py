@@ -61,15 +61,13 @@ def get_attendance_channel(zeusops_guild: Guild) -> TextChannel:
 async def save_history(channel: TextChannel):
     """Save the entire message history of the given channel to ndJson file"""
     with open("attendance.json", "w") as json_fd:
-        msg_idx = 0
-        async for message in channel.history(limit=None, oldest_first=True):
-            print(f"{msg_idx=}")
-            entry = {
-                "t": message.created_at.isoformat(),
-                "m": message.content,
-                "a": message.author.display_name,
+        messages = [
+            {
+                "timestamp": message.created_at.isoformat(),
+                "message": message.content,
+                "author": message.author.display_name,
             }
-            json.dump(entry, json_fd)
-            json_fd.write("\n")
-            msg_idx += 1
+            async for message in channel.history(limit=None, oldest_first=True)
+        ]
+        json.dump(messages, json_fd, indent=2)
         print("Completed")
