@@ -9,6 +9,9 @@ import json
 from dataclasses import asdict, dataclass
 from datetime import datetime
 from pathlib import Path
+from typing import Literal
+
+AttendanceFlag = Literal["GOOD", "BAD", "OP_DELIMITER"]
 
 
 @dataclass
@@ -25,6 +28,8 @@ class AttendanceMsg:
     """The message's content"""
     timestamp: datetime
     """The timestamp of the message"""
+    flags: list[AttendanceFlag]
+    """Emoji-based flags for that message. Informs parsing"""
     is_split: bool = False
     """
     Is the message split off = should the message text be very different from discord?
@@ -45,6 +50,7 @@ class AttendanceMsg:
             author_display=msg.author_display,
             author_id=msg.author_id,
             timestamp=msg.timestamp,
+            flags=msg.flags,
             is_split=True,
         )
 
@@ -57,6 +63,12 @@ class AttendanceMsg:
     def from_dict(cls, timestamp: str, **kwargs):
         """Create a new AttendanceMsg from dictionary values"""
         return cls(timestamp=datetime.fromisoformat(timestamp), **kwargs)
+
+    def as_dict(self) -> dict:
+        """Export as dictionary. Customized for timestamp serialization"""
+        out = asdict(self)
+        out["timestamp"] = self.timestamp.isoformat()
+        return out
 
 
 def load_attendance(filename: Path) -> list[AttendanceMsg]:
@@ -103,4 +115,4 @@ def main():
     h3 = [clean_bold(message) for message in h2]
     print(f"{len(h)} msgs from Discord, Processed into {len(h3)}")
     with open("processed_attendance.json", "w") as processed_fd:
-        json.dump([asdict(msg) for msg in h3], processed_fd, indent=2)
+        json.dump([msg.as_dict() for msg in h3], processed_fd, indent=2)

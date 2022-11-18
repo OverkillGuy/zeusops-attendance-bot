@@ -59,6 +59,9 @@ def main():
         op_date = op_attendance[0].timestamp.date().isoformat()
         print(f"Op date: {op_date}, {len(op_attendance)} lines")
         for attendance_msg in op_attendance:
+            if "BAD" in attendance_msg.flags:
+                print(f"BADFLAGGED: Skipping message '{attendance_msg.message}'")
+                continue
             squad_match = re.fullmatch(REGEX_SQUAD, attendance_msg.message)
             if squad_match is None:
                 msg_author = attendance_msg.author_display
