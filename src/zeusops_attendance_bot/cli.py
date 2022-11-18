@@ -14,6 +14,8 @@ def parse_arguments(arguments: list[str]) -> argparse.Namespace:
         description="Parse Zeusops #attendance channel in Discord",
         epilog="API token requires envvar DISCORD_API_TOKEN",
     )
+    parser.add_argument("--debug", action="store_true", help="Toggle debug mode")
+    parser.set_defaults(debug=False)
     return parser.parse_args(arguments)
 
 
@@ -21,7 +23,7 @@ def cli(arguments: Optional[list[str]] = None):
     """Run the zeusops_attendance_bot cli"""
     if arguments is None:
         arguments = sys.argv[1:]
-    parse_arguments(arguments)
+    args = parse_arguments(arguments)
     token = os.getenv("DISCORD_API_TOKEN")
     if token is None:
         print(
@@ -29,10 +31,10 @@ def cli(arguments: Optional[list[str]] = None):
             file=sys.stderr,
         )
         exit(2)  # Simulate the argparse behaviour of exiting on bad args
-    main(token)
+    main(token, args.debug)
 
 
-def main(token: Secret):
+def main(token: Secret, debug: bool):
     """Run the program's main command"""
-    client = get_client()
+    client = get_client(debug_mode=debug)
     run(client, token)

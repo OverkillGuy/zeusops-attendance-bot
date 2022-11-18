@@ -18,8 +18,10 @@ install-hooks:
 lint:  # Use all linters on all files (not just staged for commit)
 	pre-commit run --all --all-files
 
+# DEBUG="--debug"
+DEBUG=""
 attendance.json:
-	sh -c "DISCORD_API_TOKEN=$(shell pass zeusops/attendance_bot_token) poetry run zeusops-attendance-bot"
+	sh -c "DISCORD_API_TOKEN=$(shell pass zeusops/attendance_bot_token) poetry run zeusops-attendance-bot ${DEBUG}"
 
 # Not phony because real file
 # Clean up the raw discord messages into ready to parse attendance file
