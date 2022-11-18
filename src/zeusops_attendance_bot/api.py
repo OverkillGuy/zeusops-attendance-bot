@@ -5,6 +5,9 @@ from datetime import datetime, timedelta
 
 from discord import Client, Guild, Intents, Message, TextChannel
 
+from zeusops_attendance_bot.attendance import AttendanceMsg
+from zeusops_attendance_bot.parsing import process_one_line
+
 Secret = str
 
 DiscordID = int
@@ -32,6 +35,7 @@ class AttendanceClient(Client):
         """Initialize the Client"""
         super().__init__(*args, **kwargs)
         self.debug = debug
+        self.listen_channels = [ZEUSOPS_ATTENDANCE_CHANNEL_ID, ZEUSOPS_TEST_CHANNEL_ID]
 
     async def on_ready(self):
         """Entrypoint on app connected to discord"""
@@ -44,7 +48,7 @@ class AttendanceClient(Client):
             f"Found attendance channel with {len(self.attendance_channel.members)} members"
         )
         await save_history(self.attendance_channel, debug=self.debug)
-        await self.close()
+        # await self.close()
 
     async def print_memberships(self):
         """Print guilds/channels we're member of"""
@@ -52,6 +56,19 @@ class AttendanceClient(Client):
             print(f"Member of guild: {guild.name}, ID={guild.id}")
             for channel in guild.channels:
                 print(f"Member of channel: {channel.name}, ID={channel.id}")
+
+    async def on_message(self, message):
+        """Hear messages of attendance LIVE, posting it to stdout (no parsing)"""
+        if message.channel.id not in self.listen_channels:
+            return
+        message_dict = to_dict(message)
+        print(json.dumps(message_dict, indent=2))
+        message_obj = AttendanceMsg(**message_dict)
+        parsed = process_one_line(message_obj, datetime.now().date().isoformat())
+        if not parsed:
+            return
+        squad, attendance_of_squad = parsed
+        print(f"For {squad=}, attendance: '{attendance_of_squad}'")
 
 
 def get_client(debug_mode: bool) -> Client:
@@ -93,7 +110,7 @@ def flag(message: Message) -> list[str]:
     return flags
 
 
-def to_json(message: Message) -> dict:
+def to_dict(message: Message) -> dict:
     """Format a message for archival"""
     return {
         "timestamp": message.created_at.isoformat(),
@@ -101,7 +118,6 @@ def to_json(message: Message) -> dict:
         "author_display": message.author.display_name,
         "author_id": message.author.id,
         "id": message.id,
-        # "reactions": [r.emoji for r in message.reactions if isinstance(r.emoji, str)],
         "flags": flag(message),
     }
 
@@ -110,14 +126,14 @@ async def save_history(channel: TextChannel, debug: bool):
     """Save the entire message history of the given channel to ndJson file"""
     if debug:
         messages = [
-            to_json(message)
+            to_dict(message)
             async for message in channel.history(
                 limit=5, oldest_first=True, after=datetime.now() - timedelta(days=3)
             )
         ]
     else:
         messages = [
-            to_json(message)
+            to_dict(message)
             async for message in channel.history(limit=None, oldest_first=True)
         ]
     with open("attendance.json", "w") as json_fd:

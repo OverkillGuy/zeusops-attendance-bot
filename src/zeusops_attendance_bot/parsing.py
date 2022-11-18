@@ -2,6 +2,7 @@
 
 import re
 from pathlib import Path
+from typing import Optional, Tuple
 
 from zeusops_attendance_bot.attendance import AttendanceMsg, load_attendance
 
@@ -36,7 +37,9 @@ def find_ops(attendance_list: list[AttendanceMsg]) -> list[OperationAttendance]:
     ]
     # Find their index in the message list
     opsep_locations: list[int] = [
-        idx for idx, match in enumerate(opsep_matches) if match is not None
+        idx
+        for idx, match in enumerate(opsep_matches)
+        if match is not None or "OP_DELIMITER" in sorted_attendance[idx].flags
     ]
     # Find iter-opsep message-index range
     in_between_locs: list[Span] = [
@@ -51,6 +54,21 @@ def find_ops(attendance_list: list[AttendanceMsg]) -> list[OperationAttendance]:
     return [sorted_attendance[start:end] for start, end in all_op_ranges]
 
 
+def process_one_line(msg: AttendanceMsg, op_date: str) -> Optional[Tuple[str, str]]:
+    """Process a single attendance line, without context"""
+    if "BAD" in msg.flags:
+        print(f"BADFLAGGED: Skipping message '{msg.message}'")
+        return None
+    squad_match = re.fullmatch(REGEX_SQUAD, msg.message)
+    if squad_match is None:
+        msg_author = msg.author_display
+        msg_text = msg.message
+        print(f"Bad squad match on {op_date} by {msg_author}. Message: '{msg_text}'")
+        return None
+    squad, attendance_of_squad = squad_match.groups()
+    return squad, attendance_of_squad
+
+
 def main():
     """Parse the cleaned up attendance data"""
     attendance_msgs = load_attendance(Path("processed_attendance.json"))
@@ -59,15 +77,9 @@ def main():
         op_date = op_attendance[0].timestamp.date().isoformat()
         print(f"Op date: {op_date}, {len(op_attendance)} lines")
         for attendance_msg in op_attendance:
-            if "BAD" in attendance_msg.flags:
-                print(f"BADFLAGGED: Skipping message '{attendance_msg.message}'")
+            parsed = process_one_line(attendance_msg, op_date)
+            if not parsed:
                 continue
-            squad_match = re.fullmatch(REGEX_SQUAD, attendance_msg.message)
-            if squad_match is None:
-                msg_author = attendance_msg.author_display
-                msg = attendance_msg.message
-                print(f"Bad squad match on {op_date} by {msg_author}. Message: '{msg}'")
-                continue
-            squad, attendance_of_squad = squad_match.groups()
+            squad, attendance_of_squad = parsed
             print(f"For {squad=}, attendance: '{attendance_of_squad}'")
             # TODO: Process the squad's attendance as regex

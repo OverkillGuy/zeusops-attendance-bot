@@ -20,7 +20,8 @@ lint:  # Use all linters on all files (not just staged for commit)
 
 # DEBUG="--debug"
 DEBUG=""
-attendance.json:
+.PHONY: run
+run:
 	sh -c "DISCORD_API_TOKEN=$(shell pass zeusops/attendance_bot_token) poetry run zeusops-attendance-bot ${DEBUG}"
 
 # Not phony because real file
