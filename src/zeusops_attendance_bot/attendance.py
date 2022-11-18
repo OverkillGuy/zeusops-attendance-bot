@@ -108,11 +108,16 @@ def clean_bold(msg: AttendanceMsg) -> AttendanceMsg:
     return AttendanceMsg.new_from(msg, text)
 
 
+def preprocess_history(messages: list[AttendanceMsg]) -> list[AttendanceMsg]:
+    """Preprocess the given messages, splitting to line, cleaning text of format"""
+    preprocessed = [clean_bold(split) for split in newline_separate(messages)]
+    print(f"{len(messages)} msgs input, processed into {len(preprocessed)}")
+    return preprocessed
+
+
 def main():
     """Parse entrypoint"""
-    h = load_attendance(Path("attendance.json"))
-    h2 = newline_separate(h)
-    h3 = [clean_bold(message) for message in h2]
-    print(f"{len(h)} msgs from Discord, Processed into {len(h3)}")
+    loaded = load_attendance(Path("attendance.json"))
+    processed = preprocess_history(loaded)
     with open("processed_attendance.json", "w") as processed_fd:
-        json.dump([msg.as_dict() for msg in h3], processed_fd, indent=2)
+        json.dump([msg.as_dict() for msg in processed], processed_fd, indent=2)
