@@ -39,6 +39,7 @@ def find_ops(attendance_list: list[AttendanceMsg]) -> list[OperationAttendance]:
     opsep_locations: list[int] = [
         idx
         for idx, match in enumerate(opsep_matches)
+        # FIXME: Bug in OP_DELIMITER flags: the message flagged will be SKIPPED!
         if match is not None or "OP_DELIMITER" in sorted_attendance[idx].flags
     ]
     # Find iter-opsep message-index range
