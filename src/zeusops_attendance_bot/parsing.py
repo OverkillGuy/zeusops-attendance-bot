@@ -75,6 +75,8 @@ def main():
     attendance_msgs = load_attendance(Path("processed_attendance.json"))
     ops = find_ops(attendance_msgs)
     for op_attendance in ops:
+        if not op_attendance:
+            continue  # Skip empty attendance
         op_date = op_attendance[0].timestamp.date().isoformat()
         print(f"Op date: {op_date}, {len(op_attendance)} lines")
         for attendance_msg in op_attendance:
