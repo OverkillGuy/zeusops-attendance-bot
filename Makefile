@@ -2,7 +2,8 @@ DOCKER_IMAGE_NAME=zeusops-attendance-bot
 APP_VERSION=$(shell poetry version --short)
 
 .PHONY: all
-all: install lint test docs build install-hooks
+all: install lint docs build install-hooks # test
+# No tests yet, experimental
 
 .PHONY: install
 install:
