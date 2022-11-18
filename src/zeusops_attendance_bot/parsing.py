@@ -70,9 +70,8 @@ def process_one_line(msg: AttendanceMsg, op_date: str) -> Optional[Tuple[str, st
     return squad, attendance_of_squad
 
 
-def main():
-    """Parse the cleaned up attendance data"""
-    attendance_msgs = load_attendance(Path("processed_attendance.json"))
+def parse_full_attendance_history(attendance_msgs: list[AttendanceMsg]):
+    """Parse a preprocessed history into sequence of messages"""
     ops = find_ops(attendance_msgs)
     for op_attendance in ops:
         if not op_attendance:
@@ -86,3 +85,9 @@ def main():
             squad, attendance_of_squad = parsed
             print(f"For {squad=}, attendance: '{attendance_of_squad}'")
             # TODO: Process the squad's attendance as regex
+
+
+def main():
+    """Parse the cleaned up attendance data"""
+    attendance_msgs = load_attendance(Path("processed_attendance.json"))
+    parse_full_attendance_history(attendance_msgs)
