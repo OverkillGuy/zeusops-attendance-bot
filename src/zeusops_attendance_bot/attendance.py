@@ -53,12 +53,17 @@ class AttendanceMsg:
         """Sort a list of Attendance Messages by timestamp"""
         return sorted(msgs, key=lambda m: m.timestamp)
 
+    @classmethod
+    def from_dict(cls, timestamp: str, **kwargs):
+        """Create a new AttendanceMsg from dictionary values"""
+        return cls(timestamp=datetime.fromisoformat(timestamp), **kwargs)
+
 
 def load_attendance(filename: Path) -> list[AttendanceMsg]:
     """Process the attendance JSON"""
     with open(filename) as json_fd:
         history_json = json.load(json_fd)
-    return [AttendanceMsg(**msg) for msg in history_json]
+    return [AttendanceMsg.from_dict(**msg) for msg in history_json]
 
 
 def newline_separate(messages: list[AttendanceMsg]) -> list[AttendanceMsg]:
