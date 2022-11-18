@@ -93,3 +93,13 @@ documentation and serve it:
 ### Templated
 
 This repo is templated, using commit hash: `0eee5a307147635cebee34168467fd40e847a6dd`
+
+
+## TODO
+
+- Store attendance message field for reaction "❌" (CROSS MARK) present
+- Ignore all attendance messages marked with such an emoji (avoids bad_ID_list.txt!)
+- Bot should react with the bad emoji if it fails to parse attendance message,
+reposting it in test channel
+- Store attendance field for NEWLINE-REQUIRED reaction, emoji TBD (missing opsep)
+- Parse squad attendance (List of members with (L) sometimes)
