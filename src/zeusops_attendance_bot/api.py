@@ -5,8 +5,11 @@ from datetime import datetime, timedelta
 
 from discord import Client, Guild, Intents, Message, TextChannel
 
-from zeusops_attendance_bot.attendance import AttendanceMsg
-from zeusops_attendance_bot.parsing import process_one_line
+from zeusops_attendance_bot.attendance import AttendanceMsg, preprocess_history
+from zeusops_attendance_bot.parsing import (
+    parse_full_attendance_history,
+    process_one_line,
+)
 
 Secret = str
 
@@ -47,7 +50,10 @@ class AttendanceClient(Client):
         print(
             f"Found attendance channel with {len(self.attendance_channel.members)} members"
         )
-        await save_history(self.attendance_channel, debug=self.debug)
+        history_dict = await grab_history(self.attendance_channel, debug=self.debug)
+        save_attendance(history_dict)
+        parse_attendance_history(history_dict)
+
         # await self.close()
 
     async def print_memberships(self):
@@ -63,12 +69,13 @@ class AttendanceClient(Client):
             return
         message_dict = to_dict(message)
         print(json.dumps(message_dict, indent=2))
-        message_obj = AttendanceMsg(**message_dict)
-        parsed = process_one_line(message_obj, datetime.now().date().isoformat())
-        if not parsed:
-            return
-        squad, attendance_of_squad = parsed
-        print(f"For {squad=}, attendance: '{attendance_of_squad}'")
+        message_objs = preprocess_history([AttendanceMsg(**message_dict)])
+        for msg_obj in message_objs:
+            parsed = process_one_line(msg_obj, datetime.now().date().isoformat())
+            if not parsed:
+                return
+            squad, attendance_of_squad = parsed
+            print(f"For {squad=}, attendance: '{attendance_of_squad}'")
 
 
 def get_client(debug_mode: bool) -> Client:
@@ -122,13 +129,13 @@ def to_dict(message: Message) -> dict:
     }
 
 
-async def save_history(channel: TextChannel, debug: bool):
-    """Save the entire message history of the given channel to ndJson file"""
+async def grab_history(channel: TextChannel, debug: bool) -> list[dict]:
+    """Grab the entire message history of the Attendances channel as dict"""
     if debug:
         messages = [
             to_dict(message)
             async for message in channel.history(
-                limit=5, oldest_first=True, after=datetime.now() - timedelta(days=3)
+                limit=20, oldest_first=True, after=datetime.now() - timedelta(days=3)
             )
         ]
     else:
@@ -136,6 +143,20 @@ async def save_history(channel: TextChannel, debug: bool):
             to_dict(message)
             async for message in channel.history(limit=None, oldest_first=True)
         ]
+    return messages
+
+
+def save_attendance(messages: list[dict]):
+    """Save a given attendance message history to JSON file"""
     with open("attendance.json", "w") as json_fd:
-        json.dump(messages, json_fd, indent=2)
+        json.dump(messages, json_fd, indent=2, ensure_ascii=False)
         print("Completed")
+
+
+def parse_attendance_history(history_dict: list[dict]):
+    """Process the JSON-able dict of history into full attendance"""
+    history_objs = [
+        AttendanceMsg.from_dict(**message_dict) for message_dict in history_dict
+    ]
+    preprocessed = preprocess_history(history_objs)
+    parse_full_attendance_history(preprocessed)
