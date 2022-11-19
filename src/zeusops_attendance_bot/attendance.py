@@ -91,14 +91,8 @@ def newline_separate(messages: list[AttendanceMsg]) -> list[AttendanceMsg]:
         after_newline = [
             line for line in after_newline if line
         ]  # Skip evaluating repeated \n
-        if len(after_newline) > 1:
-            # print(
-            #     f"This message is weird, multiple separate newlines: '{msg.message=}'"
-            # )
-            continue
-        new_message = after_newline[0]
-        # print(f"Split message: '{new_message}'")
-        messages_out.append(AttendanceMsg.new_from(msg, text=new_message))
+        for line in after_newline:
+            messages_out.append(AttendanceMsg.new_from(msg, text=line))
     return messages_out
 
 
