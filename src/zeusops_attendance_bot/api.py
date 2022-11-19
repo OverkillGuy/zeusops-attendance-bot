@@ -120,7 +120,7 @@ def flag(message: Message) -> list[str]:
 def to_dict(message: Message) -> dict:
     """Format a message for archival"""
     return {
-        "timestamp": message.created_at.isoformat(),
+        "created_at": message.created_at.isoformat(),
         "message": message.content,
         "author_display": message.author.display_name,
         "author_id": message.author.id,

@@ -26,8 +26,9 @@ class AttendanceMsg:
     """The Discord ID of the author of the message"""
     message: str
     """The message's content"""
-    timestamp: datetime
-    """The timestamp of the message"""
+    created_at: datetime
+    """The timestamp when the message was created/sent"""
+    # FIXME: Add edited_at field
     flags: list[AttendanceFlag]
     """Emoji-based flags for that message. Informs parsing"""
     is_split: bool = False
@@ -49,7 +50,7 @@ class AttendanceMsg:
             message=text,
             author_display=msg.author_display,
             author_id=msg.author_id,
-            timestamp=msg.timestamp,
+            created_at=msg.created_at,
             flags=msg.flags,
             is_split=True,
         )
@@ -57,17 +58,17 @@ class AttendanceMsg:
     @staticmethod
     def sort_by_timestamp(msgs):
         """Sort a list of Attendance Messages by timestamp"""
-        return sorted(msgs, key=lambda m: m.timestamp)
+        return sorted(msgs, key=lambda m: m.created_at)
 
     @classmethod
-    def from_dict(cls, timestamp: str, **kwargs):
+    def from_dict(cls, created_at: str, **kwargs):
         """Create a new AttendanceMsg from dictionary values"""
-        return cls(timestamp=datetime.fromisoformat(timestamp), **kwargs)
+        return cls(created_at=datetime.fromisoformat(created_at), **kwargs)
 
     def as_dict(self) -> dict:
         """Export as dictionary. Customized for timestamp serialization"""
         out = asdict(self)
-        out["timestamp"] = self.timestamp.isoformat()
+        out["created_at"] = self.created_at.isoformat()
         return out
 
 

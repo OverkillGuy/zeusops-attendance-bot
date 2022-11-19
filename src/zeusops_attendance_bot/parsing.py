@@ -76,7 +76,7 @@ def parse_full_attendance_history(attendance_msgs: list[AttendanceMsg]):
     for op_attendance in ops:
         if not op_attendance:
             continue  # Skip empty attendance
-        op_date = op_attendance[0].timestamp.date().isoformat()
+        op_date = op_attendance[0].created_at.date().isoformat()
         print(f"Op date: {op_date}, {len(op_attendance)} lines")
         for attendance_msg in op_attendance:
             parsed = process_one_line(attendance_msg, op_date)
