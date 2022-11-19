@@ -119,8 +119,10 @@ def flag(message: Message) -> list[str]:
 
 def to_dict(message: Message) -> dict:
     """Format a message for archival"""
+    edited = message.edited_at.isoformat() if message.edited_at is not None else None
     return {
         "created_at": message.created_at.isoformat(),
+        "edited_at": edited,
         "message": message.content,
         "author_display": message.author.display_name,
         "author_id": message.author.id,

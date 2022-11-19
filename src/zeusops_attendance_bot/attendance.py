@@ -9,7 +9,7 @@ import json
 from dataclasses import asdict, dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import Literal
+from typing import Literal, Optional
 
 AttendanceFlag = Literal["GOOD", "BAD", "OP_DELIMITER"]
 
@@ -28,7 +28,8 @@ class AttendanceMsg:
     """The message's content"""
     created_at: datetime
     """The timestamp when the message was created/sent"""
-    # FIXME: Add edited_at field
+    edited_at: Optional[datetime]
+    """The timestamp when the message was last edited, if any"""
     flags: list[AttendanceFlag]
     """Emoji-based flags for that message. Informs parsing"""
     is_split: bool = False
@@ -51,6 +52,7 @@ class AttendanceMsg:
             author_display=msg.author_display,
             author_id=msg.author_id,
             created_at=msg.created_at,
+            edited_at=msg.edited_at,
             flags=msg.flags,
             is_split=True,
         )
@@ -61,14 +63,19 @@ class AttendanceMsg:
         return sorted(msgs, key=lambda m: m.created_at)
 
     @classmethod
-    def from_dict(cls, created_at: str, **kwargs):
+    def from_dict(cls, created_at: str, edited_at: Optional[str], **kwargs):
         """Create a new AttendanceMsg from dictionary values"""
-        return cls(created_at=datetime.fromisoformat(created_at), **kwargs)
+        edited = datetime.fromisoformat(edited_at) if edited_at is not None else None
+        return cls(
+            created_at=datetime.fromisoformat(created_at), edited_at=edited, **kwargs
+        )
 
     def as_dict(self) -> dict:
         """Export as dictionary. Customized for timestamp serialization"""
         out = asdict(self)
         out["created_at"] = self.created_at.isoformat()
+        edited = self.edited_at.isoformat() if self.edited_at is not None else None
+        out["edited_at"] = edited
         return out
 
 
