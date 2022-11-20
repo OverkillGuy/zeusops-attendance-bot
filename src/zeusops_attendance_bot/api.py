@@ -1,17 +1,21 @@
 """Client bindings to a REST API"""
 
-import json
 from datetime import datetime, timedelta
+from typing import Any
 
 from discord import Client, Guild, Intents, Message, TextChannel
 
-from zeusops_attendance_bot.attendance import AttendanceMsg, preprocess_history
+from zeusops_attendance_bot.models import AttendanceMsg, to_json
 from zeusops_attendance_bot.parsing import (
     parse_full_attendance_history,
     process_one_line,
 )
+from zeusops_attendance_bot.preprocess import preprocess_history
 
 Secret = str
+
+ChannelAttendance = list[AttendanceMsg]
+"""The sum of all messages of the Attendance channel, as objects"""
 
 DiscordID = int
 """A type alias for valid Discord IDs"""
@@ -67,9 +71,9 @@ class AttendanceClient(Client):
         """Hear messages of attendance LIVE, posting it to stdout (no parsing)"""
         if message.channel.id not in self.listen_channels:
             return
-        message_dict = to_dict(message)
-        print(json.dumps(message_dict, indent=2))
-        message_objs = preprocess_history([AttendanceMsg(**message_dict)])
+        message_obj = to_obj(message)
+        print(message_obj.json(indent=2))
+        message_objs = preprocess_history([message_obj])
         for msg_obj in message_objs:
             parsed = process_one_line(msg_obj, datetime.now().date().isoformat())
             if not parsed:
@@ -117,48 +121,43 @@ def flag(message: Message) -> list[str]:
     return flags
 
 
-def to_dict(message: Message) -> dict:
+def to_obj(message: Message) -> AttendanceMsg:
     """Format a message for archival"""
     edited = message.edited_at.isoformat() if message.edited_at is not None else None
-    return {
-        "created_at": message.created_at.isoformat(),
-        "edited_at": edited,
-        "message": message.content,
-        "author_display": message.author.display_name,
-        "author_id": message.author.id,
-        "id": message.id,
-        "flags": flag(message),
-    }
+    return AttendanceMsg(
+        **{
+            "created_at": message.created_at.isoformat(),
+            "edited_at": edited,
+            "message": message.content,
+            "author_display": message.author.display_name,
+            "author_id": message.author.id,
+            "id": message.id,
+            "flags": flag(message),
+        }
+    )
 
 
-async def grab_history(channel: TextChannel, debug: bool) -> list[dict]:
+async def grab_history(channel: TextChannel, debug: bool) -> ChannelAttendance:
     """Grab the entire message history of the Attendances channel as dict"""
+    args: dict[str, Any] = {"limit": None, "oldest_first": True}
     if debug:
-        messages = [
-            to_dict(message)
-            async for message in channel.history(
-                limit=20, oldest_first=True, after=datetime.now() - timedelta(days=3)
-            )
-        ]
-    else:
-        messages = [
-            to_dict(message)
-            async for message in channel.history(limit=None, oldest_first=True)
-        ]
+        args = {
+            "limit": 20,
+            "oldest_first": True,
+            "after": datetime.now() - timedelta(days=5),
+        }
+    messages = [to_obj(message) async for message in channel.history(**args)]
     return messages
 
 
-def save_attendance(messages: list[dict]):
+def save_attendance(messages: ChannelAttendance):
     """Save a given attendance message history to JSON file"""
     with open("attendance.json", "w") as json_fd:
-        json.dump(messages, json_fd, indent=2, ensure_ascii=False)
+        json_fd.write(to_json(messages))
         print("Completed")
 
 
-def parse_attendance_history(history_dict: list[dict]):
+def parse_attendance_history(history_msgs: ChannelAttendance):
     """Process the JSON-able dict of history into full attendance"""
-    history_objs = [
-        AttendanceMsg.from_dict(**message_dict) for message_dict in history_dict
-    ]
-    preprocessed = preprocess_history(history_objs)
+    preprocessed = preprocess_history(history_msgs)
     parse_full_attendance_history(preprocessed)

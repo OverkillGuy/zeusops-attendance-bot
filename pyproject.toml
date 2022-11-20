@@ -15,6 +15,7 @@ python = "^3.10"
 
 # Note: Linters not defined in this file but .pre-commit-config.yaml, which
 # installs/manages each tool in its own isolated virtualenv
+pydantic = "1.*"
 
 [tool.poetry.group.test.dependencies]
 pytest = "7.*"

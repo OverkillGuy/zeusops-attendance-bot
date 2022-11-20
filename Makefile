@@ -27,7 +27,7 @@ run:
 # Not phony because real file
 # Clean up the raw discord messages into ready to parse attendance file
 processed_attendance.json: attendance.json
-	poetry run python -c 'from zeusops_attendance_bot.attendance import main; main()'
+	poetry run python -c 'from zeusops_attendance_bot.preprocess import main; main()'
 
 .PHONY: parse
 parse: processed_attendance.json

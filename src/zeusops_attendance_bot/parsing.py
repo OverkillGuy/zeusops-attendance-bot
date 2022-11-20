@@ -4,7 +4,8 @@ import re
 from pathlib import Path
 from typing import Optional, Tuple
 
-from zeusops_attendance_bot.attendance import AttendanceMsg, load_attendance
+from zeusops_attendance_bot.models import AttendanceMsg
+from zeusops_attendance_bot.preprocess import load_attendance
 
 REGEX_OP_SEPARATOR = re.compile(r"""([-=:\.\+])\1\1+""")
 """Match an operation's separator: same character 3 or more times"""
