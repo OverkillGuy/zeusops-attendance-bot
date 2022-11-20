@@ -78,8 +78,7 @@ class AttendanceClient(Client):
             parsed = process_one_line(msg_obj, datetime.now().date().isoformat())
             if not parsed:
                 return
-            squad, attendance_of_squad = parsed
-            print(f"For {squad=}, attendance: '{attendance_of_squad}'")
+            print(f"Squad Attendance: {parsed}")
 
 
 def get_client(debug_mode: bool) -> Client:

@@ -2,9 +2,14 @@
 
 import re
 from pathlib import Path
-from typing import Optional, Tuple
+from typing import Optional
 
-from zeusops_attendance_bot.models import AttendanceFlag, AttendanceMsg
+from zeusops_attendance_bot.models import (
+    AttendanceFlag,
+    AttendanceMsg,
+    SquadAttendance,
+    SquadMember,
+)
 from zeusops_attendance_bot.preprocess import load_attendance
 
 REGEX_OP_SEPARATOR = re.compile(r"""([-=:\.\+])\1\1+""")
@@ -12,15 +17,28 @@ REGEX_OP_SEPARATOR = re.compile(r"""([-=:\.\+])\1\1+""")
 
 REGEX_SQUAD = re.compile(
     r"""
-   \*?\s*                   # Junk prefix
+   \s*                      # Junk prefix
    ([A-Za-z0-9\-/ ]+?)      # A squad name
    \s*[:\-;]\s*             # Separator between squad: team
    ([a-zA-Z0-9\(\),;\.& ]+) # Attendance for squad, unparsed
-   \*?\s*                   # Junk suffix
+   \s*                      # Junk suffix
 """,
     re.VERBOSE,
 )
 """Match a single line of squad attendance"""
+
+
+REGEX_SQUAD_ATTENDANCE = re.compile(
+    r"""
+   \s*                     # Junk
+   ([A-Za-z0-9\. ]+)      # Username
+   \s*                     # Junk
+   (\([a-zA-Z0-9, ]+\))?     # Role in parenthesis
+   \s*,?                   # Junk
+""",
+    re.VERBOSE,
+)
+"""The actual message of attendance for a single squad"""
 
 OperationAttendance = list[AttendanceMsg]
 """An operation's attendance can be seen as the aggregate of all the attendance messages of that op"""
@@ -97,7 +115,7 @@ def split_ops(attendance_list: list[AttendanceMsg]) -> list[OperationAttendance]
     return ops
 
 
-def process_one_line(msg: AttendanceMsg, op_date: str) -> Optional[Tuple[str, str]]:
+def process_one_line(msg: AttendanceMsg, op_date: str) -> Optional[SquadAttendance]:
     """Process a single attendance line, without context"""
     if AttendanceFlag.BAD in msg.flags:
         # print(f"BADFLAGGED: Skipping message '{msg.message}'")
@@ -108,8 +126,21 @@ def process_one_line(msg: AttendanceMsg, op_date: str) -> Optional[Tuple[str, st
         msg_text = msg.message
         print(f"Bad squad match on {op_date} by {msg_author}. Message: '{msg_text}'")
         return None
-    squad, attendance_of_squad = squad_match.groups()
-    return squad, attendance_of_squad
+    squad, squad_members = squad_match.groups()
+    return parse_squad_attendance(squad, squad_members)
+
+
+def parse_squad_attendance(squad: str, attendance: str):
+    """Parse a single squad's attendance"""
+    members: list[SquadMember] = []
+    # print(f"{squad=},{attendance=}")
+    for match in re.finditer(REGEX_SQUAD_ATTENDANCE, attendance):
+        username, role = match.groups()
+        role_noparen = (
+            role.replace("(", "").replace(")", "") if role is not None else None
+        )
+        members.append((username, role_noparen))
+    return SquadAttendance(squad=squad, members=members)
 
 
 def get_op_date(attendance: OperationAttendance) -> str:
@@ -132,9 +163,7 @@ def parse_full_attendance_history(attendance_msgs: list[AttendanceMsg]):
             parsed = process_one_line(attendance_msg, op_date)
             if not parsed:
                 continue
-            squad, attendance_of_squad = parsed
-            print(f"For {squad=}, attendance: '{attendance_of_squad}'")
-            # TODO: Process the squad's attendance as regex
+            print(f"Squad Attendance: {parsed}")
 
 
 def main():

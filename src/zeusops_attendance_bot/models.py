@@ -72,6 +72,23 @@ class AttendanceMsg(BaseModel):
         return dict(self)
 
 
+User = str
+"""A Zeusops user's name"""
+Role = Optional[str]
+"""A squad member's potential role (like L = Lead, or FAC, or nothing)"""
+SquadMember = tuple[User, Role]
+"""A portion of the AttendanceLine, representing a single squad member and their role"""
+
+
+class SquadAttendance(BaseModel):
+    """A parsed line of atttendance, representing a single squad"""
+
+    squad: str
+    """The squad for which attendance is being recorded for"""
+    members: list[SquadMember]
+    """The members of the squad, along with their potential role"""
+
+
 def to_json(messages: list[AttendanceMsg]) -> str:
     """Export a list of messages to JSON string"""
     return json.dumps(messages, indent=2, ensure_ascii=False, default=pydantic_encoder)
