@@ -113,14 +113,21 @@ def process_one_line(msg: AttendanceMsg, op_date: str) -> Optional[Tuple[str, st
     return squad, attendance_of_squad
 
 
+def get_op_date(attendance: OperationAttendance) -> str:
+    """Detect when the op was held: on day of first valid attendance msg"""
+    for msg in attendance:
+        if AttendanceFlag.BAD not in msg.flags:
+            break  # Stop on first good message
+    return msg.created_at.date().isoformat()
+
+
 def parse_full_attendance_history(attendance_msgs: list[AttendanceMsg]):
     """Parse a preprocessed history into sequence of messages"""
     ops = split_ops(attendance_msgs)
     for op_attendance in ops:
         if not op_attendance:
             continue  # Skip empty attendance
-        # FIXME: Badflagged messages not filtered out for op date check!
-        op_date = op_attendance[0].created_at.date().isoformat()
+        op_date = get_op_date(op_attendance)
         print(f"Op date: {op_date}, {len(op_attendance)} lines")
         for attendance_msg in op_attendance:
             parsed = process_one_line(attendance_msg, op_date)
