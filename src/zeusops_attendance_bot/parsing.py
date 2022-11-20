@@ -79,7 +79,6 @@ def split_ops_flagged(
             continue
         op_msgs_index = 0
         for flag_location in flag_locations:
-            print(f"NEWFLAG: {op_msgs[flag_location].created_at.date().isoformat()}")
             msgs_before_flag = op_msgs[op_msgs_index:flag_location]
             ops.append(msgs_before_flag)
             op_msgs_index = flag_location
@@ -100,7 +99,7 @@ def split_ops(attendance_list: list[AttendanceMsg]) -> list[OperationAttendance]
 
 def process_one_line(msg: AttendanceMsg, op_date: str) -> Optional[Tuple[str, str]]:
     """Process a single attendance line, without context"""
-    if "BAD" in msg.flags:
+    if AttendanceFlag.BAD in msg.flags:
         # print(f"BADFLAGGED: Skipping message '{msg.message}'")
         return None
     squad_match = re.fullmatch(REGEX_SQUAD, msg.message)

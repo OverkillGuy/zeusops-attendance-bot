@@ -38,8 +38,8 @@ def newline_separate(messages: list[AttendanceMsg]) -> list[AttendanceMsg]:
 
 def clean_bold(msg: AttendanceMsg) -> AttendanceMsg:
     """Remove decorative markdown from given message"""
-    text = msg.message.strip().replace("**", "").strip()
-    return AttendanceMsg.new_from(msg, text)
+    text = msg.message.strip().replace("*", "").strip()
+    return AttendanceMsg.new_from(msg, text, is_split=False)
 
 
 def preprocess_history(messages: list[AttendanceMsg]) -> list[AttendanceMsg]:

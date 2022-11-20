@@ -50,11 +50,11 @@ class AttendanceMsg(BaseModel):
     Defaults to False, because normally injected messages aren't processed much.
     """
 
-    def new_from(self, text: str):
-        """Create a new (fake) message from a real one, for splitting intent"""
+    def new_from(self, text: str, is_split: bool = True):
+        """Create a new (fake) message from a real one, mostly for splitting intent"""
         new = self.copy()
         new.message = text
-        new.is_split = True
+        new.is_split = is_split
         return new
 
     @staticmethod
