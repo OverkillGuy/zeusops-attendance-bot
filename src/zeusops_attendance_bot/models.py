@@ -1,12 +1,25 @@
 """Library-independent object models for the attendance info"""
 import json
 from datetime import datetime
-from typing import Literal, Optional
+from enum import Enum
+from typing import Optional
 
 from pydantic import BaseModel
 from pydantic.json import pydantic_encoder
 
-AttendanceFlag = Literal["GOOD", "BAD", "OP_DELIMITER"]
+
+class AttendanceFlag(str, Enum):
+    """Marker for a Discord Attendance message having a reaction emoji"""
+
+    GOOD = "GOOD"
+    BAD = "BAD"
+    OP_DELIMITER = "OP_DELIMITER"
+    """
+    Marks the message is the first of a new Op's Attendance, no preceding op separator.
+
+    This marker is manually put as a Discord Reaction on the message, in order to
+    palliate to the lack of separator
+    """
 
 
 class AttendanceMsg(BaseModel):
