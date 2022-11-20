@@ -57,7 +57,7 @@ class AttendanceClient(Client):
         history_dict = await grab_history(self.attendance_channel, debug=self.debug)
         save_attendance(history_dict)
         parse_attendance_history(history_dict)
-
+        # Exit on completion
         # await self.close()
 
     async def print_memberships(self):
