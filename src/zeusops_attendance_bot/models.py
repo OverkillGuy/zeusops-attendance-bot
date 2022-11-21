@@ -1,6 +1,6 @@
 """Library-independent object models for the attendance info"""
 import json
-from datetime import datetime
+from datetime import date, datetime
 from enum import Enum
 from typing import Optional
 
@@ -87,6 +87,18 @@ class SquadAttendance(BaseModel):
     """The squad for which attendance is being recorded for"""
     members: list[SquadMember]
     """The members of the squad, along with their potential role"""
+
+
+class OperationAttendance(BaseModel):
+    """An operation's whole attendance info, parsed"""
+
+    op_date: date
+    attendance: list[SquadAttendance]
+
+    @property
+    def user_count(self):
+        """Count how many people joined an op, from Attendance (Zeus/mods included)"""
+        return sum(len(squad.members) for squad in self.attendance)
 
 
 def to_json(messages: list[AttendanceMsg]) -> str:

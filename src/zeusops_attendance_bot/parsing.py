@@ -1,12 +1,14 @@
 """Parse attendance via regexes"""
 
 import re
+from datetime import date
 from pathlib import Path
 from typing import Optional
 
 from zeusops_attendance_bot.models import (
     AttendanceFlag,
     AttendanceMsg,
+    OperationAttendance,
     SquadAttendance,
     SquadMember,
 )
@@ -40,8 +42,6 @@ REGEX_SQUAD_ATTENDANCE = re.compile(
 )
 """The actual message of attendance for a single squad"""
 
-OperationAttendance = list[AttendanceMsg]
-"""An operation's attendance can be seen as the aggregate of all the attendance messages of that op"""
 
 Span = tuple[int, int]
 """A range of indices spanning between first item and second item"""
@@ -49,7 +49,7 @@ Span = tuple[int, int]
 
 def split_ops_delimiter(
     sorted_attendance: list[AttendanceMsg],
-) -> list[OperationAttendance]:
+) -> list[list[AttendanceMsg]]:
     """Find and group the operations by op delimiter"""
     # Check which messages match the Operation Separator regex
     opsep_matches = [
@@ -73,8 +73,8 @@ def split_ops_delimiter(
 
 
 def split_ops_flagged(
-    grouped_attendance: list[OperationAttendance],
-) -> list[OperationAttendance]:
+    grouped_attendance: list[list[AttendanceMsg]],
+) -> list[list[AttendanceMsg]]:
     """
     Find and group operations flagged via reaction as lacking a separator message
 
@@ -85,7 +85,7 @@ def split_ops_flagged(
 
     Effectively this is a "part 2" of :py:func:`split_ops_delimiter`.
     """
-    ops: list[OperationAttendance] = []
+    ops: list[list[AttendanceMsg]] = []
     for op_msgs in grouped_attendance:
         flag_locations: list[int] = [
             idx
@@ -107,7 +107,7 @@ def split_ops_flagged(
     return ops
 
 
-def split_ops(attendance_list: list[AttendanceMsg]) -> list[OperationAttendance]:
+def split_ops(attendance_list: list[AttendanceMsg]) -> list[list[AttendanceMsg]]:
     """Find/group all ops, both by delimiter and by reactions flag"""
     sorted_attendance = AttendanceMsg.sort_by_timestamp(attendance_list)
     ops_by_delimiter = split_ops_delimiter(sorted_attendance)
@@ -115,16 +115,16 @@ def split_ops(attendance_list: list[AttendanceMsg]) -> list[OperationAttendance]
     return ops
 
 
-def process_one_line(msg: AttendanceMsg, op_date: str) -> Optional[SquadAttendance]:
+def process_one_line(msg: AttendanceMsg, op_date: date) -> Optional[SquadAttendance]:
     """Process a single attendance line, without context"""
     if AttendanceFlag.BAD in msg.flags:
         # print(f"BADFLAGGED: Skipping message '{msg.message}'")
         return None
     squad_match = re.fullmatch(REGEX_SQUAD, msg.message)
     if squad_match is None:
-        msg_author = msg.author_display
-        msg_text = msg.message
-        print(f"Bad squad match on {op_date} by {msg_author}. Message: '{msg_text}'")
+        # msg_author = msg.author_display
+        # msg_text = msg.message
+        # print(f"Bad squad match on {op_date} by {msg_author}. Message: '{msg_text}'")
         return None
     squad, squad_members = squad_match.groups()
     return parse_squad_attendance(squad, squad_members)
@@ -143,30 +143,42 @@ def parse_squad_attendance(squad: str, attendance: str):
     return SquadAttendance(squad=squad, members=members)
 
 
-def get_op_date(attendance: OperationAttendance) -> str:
+def get_op_date(attendance: list[AttendanceMsg]) -> date:
     """Detect when the op was held: on day of first valid attendance msg"""
     for msg in attendance:
         if AttendanceFlag.BAD not in msg.flags:
             break  # Stop on first good message
-    return msg.created_at.date().isoformat()
+    return msg.created_at.date()
 
 
-def parse_full_attendance_history(attendance_msgs: list[AttendanceMsg]):
+def parse_full_attendance_history(
+    attendance_msgs: list[AttendanceMsg],
+) -> list[OperationAttendance]:
     """Parse a preprocessed history into sequence of messages"""
     ops = split_ops(attendance_msgs)
+    all_ops_attendance: list[OperationAttendance] = []
     for op_attendance in ops:
         if not op_attendance:
             continue  # Skip empty attendance
         op_date = get_op_date(op_attendance)
-        print(f"Op date: {op_date}, {len(op_attendance)} lines")
+        op_parsed_attendance = []
         for attendance_msg in op_attendance:
             parsed = process_one_line(attendance_msg, op_date)
-            if not parsed:
+            if parsed is None:
                 continue
-            print(f"Squad Attendance: {parsed}")
+            op_parsed_attendance.append(parsed)
+        that_op = OperationAttendance(op_date=op_date, attendance=op_parsed_attendance)
+        all_ops_attendance.append(that_op)
+    return all_ops_attendance
 
 
 def main():
     """Parse the cleaned up attendance data"""
     attendance_msgs = load_attendance(Path("processed_attendance.json"))
-    parse_full_attendance_history(attendance_msgs)
+    all_ops = parse_full_attendance_history(attendance_msgs)
+    for op in all_ops:
+        print(
+            f"[{op.op_date.isoformat()}] OP with {op.user_count} members, {len(op.attendance)} squads:"
+        )
+        for squad in op.attendance:
+            print(squad)
