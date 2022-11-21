@@ -11,6 +11,7 @@ from zeusops_attendance_bot.models import (
     OperationAttendance,
     SquadAttendance,
     SquadMember,
+    attendance_to_json,
 )
 from zeusops_attendance_bot.preprocess import load_attendance
 
@@ -22,7 +23,7 @@ REGEX_SQUAD = re.compile(
    \s*                      # Junk prefix
    ([A-Za-z0-9\-/ ]+?)      # A squad name
    \s*[:\-;]\s*             # Separator between squad: team
-   ([a-zA-Z0-9\(\),;\.& ]+) # Attendance for squad, unparsed
+   ([a-zA-Z0-9\(\),;\.& /]+) # Attendance for squad, unparsed
    \s*                      # Junk suffix
 """,
     re.VERBOSE,
@@ -35,7 +36,7 @@ REGEX_SQUAD_ATTENDANCE = re.compile(
    \s*                     # Junk
    ([A-Za-z0-9\. ]+)      # Username
    \s*                     # Junk
-   (\([a-zA-Z0-9, ]+\))?     # Role in parenthesis
+   (\([a-zA-Z0-9, /]+\))?     # Role in parenthesis
    \s*,?                   # Junk
 """,
     re.VERBOSE,
@@ -122,9 +123,9 @@ def process_one_line(msg: AttendanceMsg, op_date: date) -> Optional[SquadAttenda
         return None
     squad_match = re.fullmatch(REGEX_SQUAD, msg.message)
     if squad_match is None:
-        # msg_author = msg.author_display
-        # msg_text = msg.message
-        # print(f"Bad squad match on {op_date} by {msg_author}. Message: '{msg_text}'")
+        msg_author = msg.author_display
+        msg_text = msg.message
+        print(f"Bad squad match on {op_date} by {msg_author}. Message: '{msg_text}'")
         return None
     squad, squad_members = squad_match.groups()
     return parse_squad_attendance(squad, squad_members)
@@ -176,6 +177,8 @@ def main():
     """Parse the cleaned up attendance data"""
     attendance_msgs = load_attendance(Path("processed_attendance.json"))
     all_ops = parse_full_attendance_history(attendance_msgs)
+    with open("parsed_attendance.json", "w") as processed_fd:
+        processed_fd.write(attendance_to_json(all_ops))
     for op in all_ops:
         print(
             f"[{op.op_date.isoformat()}] OP with {op.user_count} members, {len(op.attendance)} squads:"

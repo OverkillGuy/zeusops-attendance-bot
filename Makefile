@@ -29,9 +29,16 @@ run:
 processed_attendance.json: attendance.json
 	poetry run python -c 'from zeusops_attendance_bot.preprocess import main; main()'
 
-.PHONY: parse
-parse: processed_attendance.json
+
+parsed_attendance.json: processed_attendance.json
 	poetry run python -c 'from zeusops_attendance_bot.parsing import main; main()'
+
+attendance.db: parsed_attendance.json
+	poetry run python -c 'from zeusops_attendance_bot.database import main; main()'
+
+.PHONY: serve
+serve: attendance.db
+	poetry run datasette -i attendance.db
 
 .PHONY: test
 test:

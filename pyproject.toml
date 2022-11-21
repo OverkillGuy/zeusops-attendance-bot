@@ -12,10 +12,15 @@ zeusops-attendance-bot = "zeusops_attendance_bot.cli:cli"
 python = "^3.10"
 # Parsing #attendance channel in discord
 "discord.py" = "^2.0.1"
+# Object2JSON Serializers
+pydantic = "1.*"
+# JSON 2 SQLite db
+sqlite-utils = "^3.30"
+# Webpage rendering of SQLite
+datasette = "^0.63.1"
 
 # Note: Linters not defined in this file but .pre-commit-config.yaml, which
 # installs/manages each tool in its own isolated virtualenv
-pydantic = "1.*"
 
 [tool.poetry.group.test.dependencies]
 pytest = "7.*"

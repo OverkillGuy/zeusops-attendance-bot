@@ -104,3 +104,8 @@ class OperationAttendance(BaseModel):
 def to_json(messages: list[AttendanceMsg]) -> str:
     """Export a list of messages to JSON string"""
     return json.dumps(messages, indent=2, ensure_ascii=False, default=pydantic_encoder)
+
+
+def attendance_to_json(attendances: list[OperationAttendance]) -> str:
+    """Export a list of attendance objects to JSON string"""
+    return json.dumps(attendances, indent=2, default=pydantic_encoder)
