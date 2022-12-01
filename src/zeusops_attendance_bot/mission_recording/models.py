@@ -4,7 +4,7 @@ Derived from: https://github.com/OCAP2/OCAP/wiki/JSON-Recording-Format
 Format Version: 1.1.0.
 """
 
-from typing import Any, Optional
+from typing import Any, NamedTuple, Optional, Tuple, Union
 
 from pydantic import BaseModel, Field
 
@@ -22,27 +22,67 @@ class Entity(BaseModel):
     id: int
     group: Optional[str]
     name: str
-    is_player: Optional[bool]
+    is_player: Optional[int] = Field(alias="isPlayer")
     positions: Any  # TODO: Elaborate these models
-    frames_fired: Any
+    frames_fired: Any = Field(alias="framesFired")
+
+
+class Position3D(NamedTuple):
+    """A position in 3D space"""
+
+    x: float
+    y: float
+    z: float
+
+
+class Position2D(NamedTuple):
+    """A position in 2D space"""
+
+    x: float
+    y: float
+
+
+class MarkerPosition(NamedTuple):
+    """A map marker's position at a point in time"""
+
+    frame: int
+    position: Union[Position3D, Position2D, list[Position2D]]
+    direction: float  # 0-360
+    alpha: int  # Purpose unclear: transparency?
+
+
+class Marker(NamedTuple):
+    """A map marker"""
+
+    marker_type: str
+    marker_text: str
+    start_frame: int
+    end_frame: int
+    placer: int
+    color: str
+    side: int
+    positions: list[MarkerPosition]
+    marker_size: Tuple[int, int]
+    marker_shape: str
+    marker_brush: str
 
 
 class Mission(BaseModel):
     """A mission, as recorded in JSON file"""
 
-    markers: list[Any] = Field(alias="Markers")
+    markers: list[Marker] = Field(alias="Markers")
     entities: list[Entity]
-    addon_version: str
-    capture_delay: int
-    end_frame: int
-    extension_build: str  # TODO: Parse as datetime
-    extension_version: str
-    mission_author: str
-    mission_name: str
-    world_name: str
+    addon_version: str = Field(alias="addonVersion")
+    capture_delay: int = Field(alias="captureDelay")
+    end_frame: int = Field(alias="endFrame")
+    extension_build: str = Field(alias="extensionBuild")  # TODO: Parse as datetime
+    extension_version: str = Field(alias="extensionVersion")
+    mission_author: str = Field(alias="missionAuthor")
+    mission_name: str = Field(alias="missionName")
+    world_name: str = Field(alias="worldName")
+    # Cannot use the alias_generator as it interferes with the NamedTuples
 
     class Config:
-        """Pydantic model config"""
+        """The pydantic config object"""
 
-        # Fall back to detecting lowerCamelCase fields
-        alias_generator = to_camel
+        allow_population_by_field_name = True  # Still allow underscores
