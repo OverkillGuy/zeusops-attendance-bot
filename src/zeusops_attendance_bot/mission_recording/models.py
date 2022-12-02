@@ -4,9 +4,18 @@ Derived from: https://github.com/OCAP2/OCAP/wiki/JSON-Recording-Format
 Format Version: 1.1.0.
 """
 
-from typing import Any, Literal, NamedTuple, Optional, Tuple, Union
+from typing import Annotated, Any, Literal, NamedTuple, Optional, Tuple, Union
 
 from pydantic import BaseModel, Field
+
+EntityIdentifier = int
+"""An ID unique across the mission, specifying a given Entity"""
+
+FrameNumber = int
+"""A frame number in the mission"""
+
+FrameRange = tuple[FrameNumber, FrameNumber]
+"""A range of frames, from start to end frame number"""
 
 
 class Position3D(NamedTuple):
@@ -30,7 +39,7 @@ Position = Union[Position2D, Position3D]
 class MarkerPosition(NamedTuple):
     """A map marker's position at a point in time"""
 
-    frame: int
+    frame: FrameNumber
     position: Union[Position, list[Position2D]]  # TODO Disambiguate on type/id?
     direction: float  # 0-360
     alpha: int  # Purpose unclear: transparency?
@@ -52,8 +61,8 @@ class Marker(NamedTuple):
     marker_brush: str
 
 
-class EntityPosition(NamedTuple):
-    """An entity's position, frozen in unspecified time"""
+class UnitEntityPosition(NamedTuple):
+    """A unit entity's position, frozen in unspecified time"""
 
     position: Position3D
     direction: float
@@ -64,34 +73,50 @@ class EntityPosition(NamedTuple):
     role_specialty: str
 
 
+class VehicleEntityPosition(NamedTuple):
+    """The position-update of a Vehicle entity"""
+
+    position: Position3D
+    direction: float
+    is_alive: int
+    crew: list[EntityIdentifier]
+    capture_frame_numbers: FrameRange
+
+
 class BaseEntity(BaseModel):
     """The shared base for all entities, unit or vehicle"""
 
-    id: int
+    id: EntityIdentifier
     group: Optional[str]
     name: str
     is_player: Optional[int] = Field(alias="isPlayer")
     frames_fired: Any = Field(alias="framesFired")
     role: Optional[str]
     side: Optional[str]
-    start_frame_num: int = Field(alias="startFrameNum")
+    start_frame_num: FrameNumber = Field(alias="startFrameNum")
 
 
 class UnitEntity(BaseEntity):
     """A unit entity in mission"""
 
     type: Literal["unit"]
-    positions: list[EntityPosition]
+    positions: list[UnitEntityPosition]
 
 
 class VehicleEntity(BaseEntity):
-    """A vehicleentity in mission"""
+    """A vehicle entity in mission
+
+    The official format description (see module-wide link) is WRONG here:
+    This struct is derived from source code for vehicle updates:
+    https://github.com/OCAP2/addon/blob/9bf85531f89f78c906df15c5c7af304b81fcd38c/addons/%40ocap/addons/ocap/functions/fn_startCaptureLoop.sqf#L198
+
+    """
 
     type: Literal["vehicle"]
-    positions: list[Any]  # FIXME: Determine what kind of list it is
+    positions: list[VehicleEntityPosition]
 
 
-Entity = Union[UnitEntity, VehicleEntity]
+Entity = Annotated[Union[UnitEntity, VehicleEntity], Field(discriminator="type")]
 
 
 class Mission(BaseModel):
