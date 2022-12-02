@@ -4,7 +4,7 @@ Derived from: https://github.com/OCAP2/OCAP/wiki/JSON-Recording-Format
 Format Version: 1.1.0.
 """
 
-from typing import Annotated, Any, Literal, NamedTuple, Optional, Tuple, Union
+from typing import Annotated, Literal, NamedTuple, Optional, Tuple, Union
 
 from pydantic import BaseModel, Field
 
@@ -83,6 +83,16 @@ class VehicleEntityPosition(NamedTuple):
     capture_frame_numbers: FrameRange
 
 
+class GunFireEvent(NamedTuple):
+    """A record of a gun being fired, without info about who did it
+
+    Implementation just tells us the position of the guy who did fire
+    """
+
+    frame_number: FrameNumber
+    position: Position3D
+
+
 class BaseEntity(BaseModel):
     """The shared base for all entities, unit or vehicle"""
 
@@ -90,7 +100,7 @@ class BaseEntity(BaseModel):
     group: Optional[str]
     name: str
     is_player: Optional[int] = Field(alias="isPlayer")
-    frames_fired: Any = Field(alias="framesFired")
+    frames_fired: list[GunFireEvent] = Field(alias="framesFired")
     role: Optional[str]
     side: Optional[str]
     start_frame_num: FrameNumber = Field(alias="startFrameNum")
