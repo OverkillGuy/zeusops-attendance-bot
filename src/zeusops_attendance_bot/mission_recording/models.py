@@ -4,7 +4,7 @@ Derived from: https://github.com/OCAP2/OCAP/wiki/JSON-Recording-Format
 Format Version: 1.1.0.
 """
 
-from typing import Any, NamedTuple, Optional, Tuple, Union
+from typing import Any, Literal, NamedTuple, Optional, Tuple, Union
 
 from pydantic import BaseModel, Field
 
@@ -20,11 +20,15 @@ class Entity(BaseModel):
     """A mission entity (player or vehicle)"""
 
     id: int
+    type: Literal["unit", "vehicle"]
     group: Optional[str]
     name: str
     is_player: Optional[int] = Field(alias="isPlayer")
     positions: Any  # TODO: Elaborate these models
     frames_fired: Any = Field(alias="framesFired")
+    role: Optional[str]
+    side: Optional[str]
+    start_frame_num: int = Field(alias="startFrameNum")
 
 
 class Position3D(NamedTuple):
