@@ -9,28 +9,6 @@ from typing import Any, Literal, NamedTuple, Optional, Tuple, Union
 from pydantic import BaseModel, Field
 
 
-def to_camel(string: str) -> str:
-    """Convert a string to lowerCamelCase"""
-    camelCase = "".join(word.capitalize() for word in string.split("_"))
-    lowered_firstletter = camelCase[0].lower()
-    return lowered_firstletter + camelCase[1:]
-
-
-class Entity(BaseModel):
-    """A mission entity (player or vehicle)"""
-
-    id: int
-    type: Literal["unit", "vehicle"]
-    group: Optional[str]
-    name: str
-    is_player: Optional[int] = Field(alias="isPlayer")
-    positions: Any  # TODO: Elaborate these models
-    frames_fired: Any = Field(alias="framesFired")
-    role: Optional[str]
-    side: Optional[str]
-    start_frame_num: int = Field(alias="startFrameNum")
-
-
 class Position3D(NamedTuple):
     """A position in 3D space"""
 
@@ -46,11 +24,14 @@ class Position2D(NamedTuple):
     y: float
 
 
+Position = Union[Position2D, Position3D]
+
+
 class MarkerPosition(NamedTuple):
     """A map marker's position at a point in time"""
 
     frame: int
-    position: Union[Position3D, Position2D, list[Position2D]]
+    position: Union[Position, list[Position2D]]  # TODO Disambiguate on type/id?
     direction: float  # 0-360
     alpha: int  # Purpose unclear: transparency?
 
@@ -69,6 +50,48 @@ class Marker(NamedTuple):
     marker_size: Tuple[int, int]
     marker_shape: str
     marker_brush: str
+
+
+class EntityPosition(NamedTuple):
+    """An entity's position, frozen in unspecified time"""
+
+    position: Position3D
+    direction: float
+    alive: int
+    is_in_vehicle: int
+    name_this_frame: str
+    is_player_or_ai_this_frame: int
+    role_specialty: str
+
+
+class BaseEntity(BaseModel):
+    """The shared base for all entities, unit or vehicle"""
+
+    id: int
+    group: Optional[str]
+    name: str
+    is_player: Optional[int] = Field(alias="isPlayer")
+    frames_fired: Any = Field(alias="framesFired")
+    role: Optional[str]
+    side: Optional[str]
+    start_frame_num: int = Field(alias="startFrameNum")
+
+
+class UnitEntity(BaseEntity):
+    """A unit entity in mission"""
+
+    type: Literal["unit"]
+    positions: list[EntityPosition]
+
+
+class VehicleEntity(BaseEntity):
+    """A vehicleentity in mission"""
+
+    type: Literal["vehicle"]
+    positions: list[Any]  # FIXME: Determine what kind of list it is
+
+
+Entity = Union[UnitEntity, VehicleEntity]
 
 
 class Mission(BaseModel):
