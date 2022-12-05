@@ -10,6 +10,7 @@ from zeusops_attendance_bot.mission_recording.models import (
     HitInfo,
     HitKilledEvent,
     Mission,
+    UnitEntity,
 )
 
 
@@ -28,6 +29,11 @@ def create_tables(db):
     )
     opinfo_fields = {"mission_id": int}
     opinfo_fk = ("mission_id", "operations", "id")
+    db["frames"].create(
+        {"frame_number": int, **opinfo_fields},  # TODO Add UTC timestamp (interpolated)
+        pk=("mission_id", "frame_number"),
+        foreign_keys=[opinfo_fk],
+    )
     base_entity_fields = {
         "entity_id": int,
         "group": str,
@@ -39,7 +45,27 @@ def create_tables(db):
     db["entities"].create(
         base_entity_fields, pk=("mission_id", "entity_id"), foreign_keys=[opinfo_fk]
     )
-    # db["unit_position"].create({"entity_id": int,"name": str, "is_player": int, "alive": int})
+    db["unit_positions"].create(
+        {
+            "entity_id": int,
+            "frame_id": int,
+            "pos_x": float,
+            "pos_y": float,
+            "pos_z": float,
+            "direction": float,
+            "is_alive": bool,
+            "is_in_vehicle": bool,
+            "is_player_now": bool,
+            **opinfo_fields,
+        },
+        pk=("mission_id", "entity_id", "frame_id"),
+        foreign_keys=[
+            opinfo_fk,
+            ("entity_id", "entities", "entity_id"),
+            ("frame_id", "frames", "frame_number"),
+        ],
+    )
+
     db["connection_events"].create(
         {
             "frame": int,
@@ -108,6 +134,8 @@ def save_mission(db, mission: Mission):
             "frame_count": mission.end_frame,
         }
     )
+    for frame_num in range(mission.end_frame):
+        db["frames"].insert({"mission_id": mission_id, "frame_number": frame_num})
     for entity in mission.entities:
         db["entities"].insert(
             {
@@ -119,6 +147,23 @@ def save_mission(db, mission: Mission):
                 "is_player": entity.is_player,
             }
         )
+        if isinstance(entity, UnitEntity) and entity.is_player:
+            start_frame = entity.start_frame_num
+            for pos_frame_idx, position in enumerate(entity.positions):
+                db["unit_positions"].insert(
+                    {
+                        "entity_id": entity.id,
+                        "frame_id": start_frame + pos_frame_idx,
+                        "pos_x": position.position.x,
+                        "pos_y": position.position.y,
+                        "pos_z": position.position.z,
+                        "direction": position.direction,
+                        "is_alive": position.alive,
+                        "is_in_vehicle": position.is_in_vehicle,
+                        "is_player_now": position.is_player_or_ai_this_frame,
+                        "mission_id": mission_id,
+                    }
+                )
     for event_id, event in enumerate(mission.events):
         if isinstance(event, ConnectionEvent):
             db["connection_events"].insert(
