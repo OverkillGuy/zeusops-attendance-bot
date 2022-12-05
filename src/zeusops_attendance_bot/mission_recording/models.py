@@ -4,7 +4,7 @@ Derived from: https://github.com/OCAP2/OCAP/wiki/JSON-Recording-Format
 Format Version: 1.1.0.
 """
 
-from typing import Annotated, Literal, NamedTuple, Optional, Tuple, Union
+from typing import Annotated, Any, Literal, NamedTuple, Optional, Tuple, Union
 
 from pydantic import BaseModel, Field
 
@@ -163,7 +163,7 @@ class HitKilledEvent(NamedTuple):
     frame_id: int
     event_type: Literal["hit", "killed"]
     entity_id: int
-    killer_info: Union[HitInfo, tuple[NullText], tuple[int]]
+    source_info: Union[HitInfo, tuple[NullText], tuple[int]]
     distance: int
 
 
@@ -179,11 +179,12 @@ class Mission(BaseModel):
     addon_version: str = Field(alias="addonVersion")
     capture_delay: int = Field(alias="captureDelay")
     end_frame: int = Field(alias="endFrame")
-    extension_build: str = Field(alias="extensionBuild")  # TODO: Parse as datetime
+    extension_build: str = Field(alias="extensionBuild")
     extension_version: str = Field(alias="extensionVersion")
     mission_author: str = Field(alias="missionAuthor")
     mission_name: str = Field(alias="missionName")
     world_name: str = Field(alias="worldName")
+    times: Any  # TODO: Parse timestamp
     # Cannot use the alias_generator as it interferes with the NamedTuples
 
     class Config:
