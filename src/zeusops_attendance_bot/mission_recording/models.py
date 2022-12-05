@@ -8,7 +8,7 @@ from typing import Annotated, Literal, NamedTuple, Optional, Tuple, Union
 
 from pydantic import BaseModel, Field
 
-EntityIdentifier = int
+EntityID = int
 """An ID unique across the mission, specifying a given Entity"""
 
 FrameNumber = int
@@ -79,7 +79,7 @@ class VehicleEntityPosition(NamedTuple):
     position: Position3D
     direction: float
     is_alive: int
-    crew: list[EntityIdentifier]
+    crew: list[EntityID]
     capture_frame_numbers: FrameRange
 
 
@@ -96,7 +96,7 @@ class GunFireEvent(NamedTuple):
 class BaseEntity(BaseModel):
     """The shared base for all entities, unit or vehicle"""
 
-    id: EntityIdentifier
+    id: EntityID
     group: Optional[str]
     name: str
     is_player: Optional[int] = Field(alias="isPlayer")
@@ -129,11 +129,53 @@ class VehicleEntity(BaseEntity):
 Entity = Annotated[Union[UnitEntity, VehicleEntity], Field(discriminator="type")]
 
 
+class ConnectionEvent(NamedTuple):
+    """The record of a player's connection or disconnection"""
+
+    frame_id: int
+    event_type: Literal["connected", "disconnected"]
+    player_name: str
+
+
+class MissionEndEvent(NamedTuple):
+    """The end of the mission"""
+
+    frame_id: int
+    event_type: Literal["endMission"]
+    more_info: tuple[str, str]
+
+
+class HitInfo(NamedTuple):
+    """The details of what hit/killed somebody"""
+
+    source_id: int
+    """Who did the hitting/killing"""
+    weapon: str
+    """The weapon that source_id was using"""
+
+
+NullText = Literal["null"]
+
+
+class HitKilledEvent(NamedTuple):
+    """A record of a player/AI being hit or killed"""
+
+    frame_id: int
+    event_type: Literal["hit", "killed"]
+    entity_id: int
+    killer_info: Union[HitInfo, tuple[NullText], tuple[int]]
+    distance: int
+
+
+Event = Union[ConnectionEvent, MissionEndEvent, HitKilledEvent]
+
+
 class Mission(BaseModel):
     """A mission, as recorded in JSON file"""
 
     markers: list[Marker] = Field(alias="Markers")
     entities: list[Entity]
+    events: list[Event]
     addon_version: str = Field(alias="addonVersion")
     capture_delay: int = Field(alias="captureDelay")
     end_frame: int = Field(alias="endFrame")
