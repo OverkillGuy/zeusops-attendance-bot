@@ -60,7 +60,11 @@ def create_tables(db):
             "weapon": str,
             **opinfo_fields,
         },
-        foreign_keys=[opinfo_fk],
+        foreign_keys=[
+            opinfo_fk,
+            ("hit_entity", "entities", "entity_id"),
+            ("hitter_entity", "entities", "entity_id"),
+        ],
         pk=("mission_id", "event_id"),
     )
     db["kills"].create(
@@ -72,7 +76,11 @@ def create_tables(db):
             "weapon": str,
             **opinfo_fields,
         },
-        foreign_keys=[opinfo_fk],
+        foreign_keys=[
+            opinfo_fk,
+            ("entity", "entities", "entity_id"),
+            ("killer_entity", "entities", "entity_id"),
+        ],
         pk=("mission_id", "event_id"),
     )
 
